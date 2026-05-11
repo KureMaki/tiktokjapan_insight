@@ -1,0 +1,1412 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync-get-dataset-items?token=YOUR_APIFY_TOKEN",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"resultsPerPage\": 1,\n  \"postURLs\": [\"{{ $json.url }}\"]\n}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -368,
+        0
+      ],
+      "id": "2baeefcd-acf1-44e7-baa0-827d3b97affa",
+      "name": "HTTP Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\n你是一名深耕日本市场 10 年的 TikTok 资深运营专家，擅长通过数据反推内容逻辑与社会心理。\n\n# Context\n以下是从 TikTok 日区抓取的原始数据：\n- 视频 URL: {{ $json.webVideoUrl }}\n- 标题/文案: {{ $json.text }}\n- 互动数据: 点赞 {{ $json.diggCount }}, 评论 {{ $json.commentCount }}, 播放 {{ $json.playCount }}, 收藏 {{ $json.collectCount }}, 转发 {{ $json.shareCount }}\n- 标签列表: {{ $json.hashtags }}\n\n# Task\n请分析上述数据，并严格按照下方的 JSON 格式输出。严禁包含任何开场白或解释文字。\n\n# Rules\n1. [热度评价]: 这是一个基于日本 TikTok 行业平均水平的逻辑推演。\n   - 算法参考：日区平均点赞/播放比约为 3%-5%。如果该视频 >5%，则评价为\"点赞率极高，情绪共鸣强\"。\n   - 百分位推算：结合播放量，判断其处于\"日区前 5%、10% 还是 50%\"的水平。\n2. [Hashtag]: 请从原始标签中提取最核心、热度最高的 5 个，以数组格式输出。\n3. [hook_analysis]: 拆解文案开篇 3 秒的钩子逻辑。\n4. [audience_vibe]: 基于互动比例推测日本用户的反馈（例如：共感、吐槽、求链接）。\n5. [content_format]: 判断视频内容形式，从以下选项中选一个：\n   真人出镜 / 动画插画 / 字幕文字流 / 产品展示 / 混剪 / 其他\n   判断依据：结合标题文案和 hashtag 推断。\n6. [distribution_signal]: 判断流量分发性质，从以下选项中选一个：\n   疑似自然流量 / 疑似官方助推 / 疑似付费推广 / 疑似网红合作\n   判断逻辑：\n   - 点赞率 <1% 但播放量极高 → 疑似官方助推\n   - hashtag 或文案含品牌词、产品名 → 疑似付费推广\n   - 账号名含合作标识或文案含 #PR #ad → 疑似网红合作\n   - 其余点赞率正常范围 → 疑似自然流量\n\n# 请严格按照以下 JSON 格式输出\n{\n  \"url\": \"{{ $json.webVideoUrl }}\",\n  \"title\": \"{{ $json.text }}\",\n  \"top_5_hashtags\": [{{ $json.hashtags }}],\n  \"stats\": {\n    \"play\": {{ $json.playCount }},\n    \"digg\": {{ $json.diggCount }},\n    \"comment\": {{ $json.commentCount }},\n    \"collect\": {{ $json.collectCount }},\n    \"share\": {{ $json.shareCount }}\n  },\n  \"market_level_rating\": \"基于点赞比和播放量的水平评价，例如：日区 Top 10% 爆款\",\n  \"hook_analysis\": \"3秒爆点拆解\",\n  \"audience_vibe\": \"情绪反馈总结\",\n  \"cultural_keyword\": \"日本市场特征/文化核心词\",\n  \"content_format\": \"真人出镜 / 动画插画 / 字幕文字流 / 产品展示 / 混剪 / 其他（选一个）\",\n  \"distribution_signal\": \"疑似自然流量 / 疑似官方助推 / 疑似付费推广 / 疑似网红合作（选一个）\",\n  \"risk_factor\": \"请站在 TikTok 日本审核政策和日本社会舆论（炎上预防）的角度进行分析\",\n  \"business_insight\": \"假设问你'如何看待这类内容的商业化价值'，��������������������给出具备高阶运营�������野的回答\",\n  \"copyable_methodology\": \"可复制的内容生成方法论\"\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -80,
+        -16
+      ],
+      "id": "820c4a80-b4a8-4ac9-9a2f-928df9d8c75a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        288
+      ],
+      "id": "31823726-ef15-4fdf-a497-f3ff849b16a7",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "3FWHrA6EDSqAyw9U",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"url\": \"https://www.tiktok.com/@example/video/123456789\",\n  \"title\": \"视频标题或文案\",\n  \"top_5_hashtags\": [\n    \"#桜\",\n    \"#さくら\",\n    \"#sakura\",\n    \"#女子高生\",\n    \"#jk\"\n  ],\n  \"stats\": {\n    \"play\": 171700,\n    \"digg\": 11700,\n    \"comment\": 198,\n    \"collect\": 1017,\n    \"share\": 254\n  },\n  \"market_level_rating\": \"日区前10%爆款，点赞率极高（6.81% > 5%平均），情绪共鸣强\",\n  \"hook_analysis\": \"开篇3秒钩子逻辑拆解\",\n  \"audience_vibe\": \"评论区日本用户情绪反馈（共感/吐槽/求购等）\",\n  \"cultural_keyword\": \"核心日本文化符号或市场特征\",\n  \"risk_factor\": \"内容是否存在版权风险、合规性风险或日本文化禁忌点\",\n  \"business_insight\": \"针对该案例，如何体现你的运营思考（100字以内）\",\n  \"content_format\": \"真人出镜\",\n  \"distribution_signal\": \"疑似自然流量\",\n  \"copyable_methodology\": \"具体可落地的爆款内容生成公式\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        208
+      ],
+      "id": "ad2721ed-cd35-47d4-94d9-a5dc2b77dd19",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        80,
+        384
+      ],
+      "id": "cad9f846-3ab2-4ebe-aab7-60fe365a189b",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "3FWHrA6EDSqAyw9U",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "183Ncl8zN8doows4Zvy3IhVzo5iZ45uxgz4whX8IrBQo",
+          "mode": "list",
+          "cachedResultName": "TTJ_Content_Analysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/183Ncl8zN8doows4Zvy3IhVzo5iZ45uxgz4whX8IrBQo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "工作表1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/183Ncl8zN8doows4Zvy3IhVzo5iZ45uxgz4whX8IrBQo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Source": "={{ (() => { try { return $('加Top标签').item.json.source_type } catch(e) { return $('Edit Fields').item.json.source_type } })() }}",
+            "Batch_ID": "={{ (() => { try { return $('加Top标签').item.json.batch_id } catch(e) { return $('Edit Fields').item.json.batch_id } })() }}",
+            "URL": "={{ $json.url || $json.output?.url || '' }}",
+            "Title": "={{ $json.title || $json.output?.title || '' }}",
+            "Hashtags": "={{ $json.hashtags || $json.output?.top_5_hashtags || '' }}",
+            "Play_Count": "={{ $json.play_count !== undefined ? $json.play_count : ($json.output?.stats?.play || '') }}",
+            "Digg_Count": "={{ $json.digg_count !== undefined ? $json.digg_count : ($json.output?.stats?.digg || '') }}",
+            "Comment_Count": "={{ $json.comment_count !== undefined ? $json.comment_count : ($json.output?.stats?.comment || '') }}",
+            "Collect_Count": "={{ $json.collect_count !== undefined ? $json.collect_count : ($json.output?.stats?.collect || '') }}",
+            "Share_Count": "={{ $json.share_count !== undefined ? $json.share_count : ($json.output?.stats?.share || '') }}",
+            "Market_Rating": "={{ $json.output?.market_level_rating || '' }}",
+            "Hook_Analysis": "={{ $json.output?.hook_analysis || '' }}",
+            "Audience_Vibe": "={{ $json.output?.audience_vibe || '' }}",
+            "Cultural_Keyword": "={{ $json.output?.cultural_keyword || '' }}",
+            "content_format": "={{ $json.output?.content_format || '' }}",
+            "distribution_signal": "={{ $json.distribution_signal || $json.output?.distribution_signal || '' }}",
+            "Risk_Factor": "={{ $json.output?.risk_factor || '' }}",
+            "Business_Insight": "={{ $json.output?.business_insight || '' }}",
+            "Methodology": "={{ $json.output?.copyable_methodology || '' }}",
+            "Author": "={{ $json.author || '' }}",
+            "Author_Fans": "={{ $json.author_fans !== undefined ? String($json.author_fans) : '' }}",
+            "Like_Ratio": "={{ $json.like_ratio || '' }}",
+            "Engagement_Rate": "={{ $json.engagement_rate || '' }}",
+            "Content_Category": "={{ $json.content_category || '' }}",
+            "Create_Time": "={{ $json.create_time || '' }}",
+            "Rank": "={{ $json._rank !== undefined ? String($json._rank) : '' }}",
+            "Score": "={{ $json._score !== undefined ? String(Math.round($json._score || 0)) : '' }}",
+            "Collect_Rate": "={{ $json.collect_rate || '' }}",
+            "Time_stamp": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [
+            "URL"
+          ],
+          "schema": [
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Batch_ID",
+              "displayName": "Batch_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Play_Count",
+              "displayName": "Play_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Digg_Count",
+              "displayName": "Digg_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comment_Count",
+              "displayName": "Comment_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Collect_Count",
+              "displayName": "Collect_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Share_Count",
+              "displayName": "Share_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Market_Rating",
+              "displayName": "Market_Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook_Analysis",
+              "displayName": "Hook_Analysis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Audience_Vibe",
+              "displayName": "Audience_Vibe",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cultural_Keyword",
+              "displayName": "Cultural_Keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content_format",
+              "displayName": "content_format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "distribution_signal",
+              "displayName": "distribution_signal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Risk_Factor",
+              "displayName": "Risk_Factor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business_Insight",
+              "displayName": "Business_Insight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Methodology",
+              "displayName": "Methodology",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Author",
+              "displayName": "Author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Author_Fans",
+              "displayName": "Author_Fans",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Like_Ratio",
+              "displayName": "Like_Ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Engagement_Rate",
+              "displayName": "Engagement_Rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content_Category",
+              "displayName": "Content_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Create_Time",
+              "displayName": "Create_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rank",
+              "displayName": "Rank",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Collect_Rate",
+              "displayName": "Collect_Rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time_stamp",
+              "displayName": "Time_stamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        0
+      ],
+      "id": "5debd29b-7044-49ea-841d-e6fc6300c75f",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hdGavWk1HagzoUFs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "TikTok视频运营分析器",
+        "formDescription": "请输入 TikTok 视频 URL，Agent将自动拆解爆点、文化背景及运营价值分析。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "视频链接",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -704,
+        0
+      ],
+      "id": "8d886446-3b4a-4810-97d7-44dba587f2bb",
+      "name": "On form submission",
+      "webhookId": "1bdcb38c-0d61-447a-bb3e-dc0d75e95b3d"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<div style=\"font-family: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1f2937; line-height: 1.6; padding: 20px; background-color: #ffffff;\">\n  \n  <h1 style=\"color: #ff0050; font-size: 24px; margin-bottom: 10px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;\">📊 TT-Insight 调研简报</h1>\n\n  <div style=\"margin-bottom: 24px;\">\n    <p style=\"margin: 8px 0;\"><span style=\"color: #6b7280; font-weight: 600;\">🎬 视频标题：</span>{{ $json.Title }}</p>\n    <p style=\"margin: 8px 0;\"><span style=\"color: #6b7280; font-weight: 600;\">🏷️ 视频标签：</span><span style=\"background-color: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 13px;\">{{ $json.Hashtags }}</span></p>\n <p style=\"margin: 8px 0;\"><span style=\"color: #6b7280; font-weight: 600;\">🏷️ 文化背景：</span><span style=\"background-color: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 13px;\">{{ $json.Cultural_Keyword }}</span></p>\n<p style=\"margin: 8px 0;\"><span style=\"color: #6b7280; font-weight: 600;\">📍 视频地址：</span><span style=\"background-color: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 13px;\">{{ $json.URL }}</span></p>\n  </div>\n\n  <div style=\"background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px;\">\n    <strong style=\"color: #111827; display: block; margin-bottom: 8px;\">🚀 市场爆发力评估</strong>\n    <span style=\"color: #374151;\">{{ $json.Market_Rating }}</span>\n  </div>\n\n  <div style=\"margin-bottom: 24px;\">\n    <h3 style=\"color: #111827; font-size: 18px; margin-bottom: 12px; display: flex; align-items: center;\">💡 核心深度洞察</h3>\n    \n    <div style=\"margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #00f2ea;\">\n      <p style=\"font-weight: 600; margin: 0 0 4px 0;\">1. 钩子逻辑 (Hook Analysis)</p>\n      <p style=\"margin: 0; color: #4b5563;\">{{ $json.Hook_Analysis }}</p>\n    </div>\n\n    <div style=\"margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #c425aa;\">\n      <p style=\"font-weight: 600; margin: 0 0 4px 0;\">2. 受众共鸣 (Audience Vibe)</p>\n      <p style=\"margin: 0; color: #4b5563;\">{{ $json.Audience_Vibe }}</p>\n    </div>\n\n    <div style=\"margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #ff0050;\">\n      <p style=\"font-weight: 600; margin: 0 0 4px 0;\">3. 爆款方法论 (Methodology)</p>\n      <p style=\"margin: 0; color: #4b5563;\">{{ $json.Methodology }}</p>\n    </div>\n\n    <div style=\"margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #ede621;\">\n      <p style=\"font-weight: 600; margin: 0 0 4px 0;\">4. 风险分析 (Risk Factor)</p>\n      <p style=\"margin: 0; color: #4b5563;\">{{ $json.Risk_Factor }}</p>\n    </div>\n  </div>\n\n  <div style=\"background-color: #111827; color: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 24px;\">\n    <h4 style=\"margin: 0 0 10px 0; color: #00f2ea; font-size: 16px;\">🎤 运营价值分析 (Business Insight)</h4>\n    <p style=\"margin: 0; font-size: 14px; line-height: 1.7; font-style: italic;\">\"{{ $json.Business_Insight }}\"</p>\n  </div>\n\n  <div style=\"text-align: center; border-top: 1px solid #f3f4f6; padding-top: 16px; color: #9ca3af; font-size: 12px;\">\n    Generated by TT-Insight System v1.4 | {{ $now.toFormat('yyyy-MM-dd HH:mm') }}\n  </div>\n\n</div>"
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        688,
+        -16
+      ],
+      "id": "b9425c35-502d-4220-be34-da21601cade1",
+      "name": "Form",
+      "webhookId": "4be8dafa-21d9-4ca7-826f-c56120b0e03e"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1152,
+        -400
+      ],
+      "id": "56fb0e8b-0b9e-4012-a6a5-c666968aefc9",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -528,
+        -320
+      ],
+      "id": "61c46b54-b40c-4764-9888-4003cb4ca824",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "297e2925-5033-4674-8c31-3e7840b00f1e",
+              "name": "source_type",
+              "value": "Manual",
+              "type": "string"
+            },
+            {
+              "id": "fb349405-441e-4700-886f-23d3c35d3651",
+              "name": "batch_id",
+              "value": "N/A",
+              "type": "string"
+            },
+            {
+              "id": "url-field-manual",
+              "name": "url",
+              "value": "={{ $('On form submission').item.json['视频链接'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -544,
+        0
+      ],
+      "id": "ffd4578e-381f-4471-b473-dfc1c674a20d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f21980ec-d6df-4793-88b2-98f94176c4e7",
+              "name": "source_type",
+              "value": "Weekly_Top20",
+              "type": "string"
+            },
+            {
+              "id": "18e1d748-64d8-4c60-acee-30e6f8e9a14d",
+              "name": "batch_id",
+              "value": "={{ $now.toFormat('yyyy-WW') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        -320
+      ],
+      "id": "27905966-f476-4076-bffb-7e0b511f4e4e",
+      "name": "加Top标签"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Source }}",
+                    "rightValue": "Manual",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Manual"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Source }}",
+                    "rightValue": "Weekly_Top20",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Weekly_Top20"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Route by Source"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -464
+      ],
+      "id": "269b8acd-6f23-4ca6-99b0-55e5ee4cb8b3",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "id": "b1c2d3e4-f5a6-7890-bcde-f12345678901",
+      "name": "周报 AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        48,
+        -688
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c2d3e4f5-a6b7-8901-cdef-123456789012",
+      "name": "DeepSeek 周报",
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -272
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "3FWHrA6EDSqAyw9U",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "98f043d0-63f8-4304-9ce9-086a62ed9e47",
+          "mode": "list",
+          "cachedResultName": "TT Insight周报",
+          "cachedResultUrl": "https://www.notion.so/98f043d063f843049ce9086a62ed9e47"
+        },
+        "title": "={{ $json.weekly_title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "数据周期|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.data_period }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "大盘健康度|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.macro_health }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "内容格局|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.content_landscape }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "爆款逻辑|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.viral_logic }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "文化热词|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.cultural_map }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "热门话题标签|multi_select",
+              "multiSelectValue": "={{ $json.hot_hashtags }}"
+            },
+            {
+              "key": "可落地创作建议|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.actionable_ideas }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "广告生态|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.ad_ecosystem }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "完整周报|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.weekly_full_report }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "分析视频数|number",
+              "numberValue": "={{ $json.analyzed_count }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d3e4f5a6-b7c8-9012-defa-234567890123",
+      "name": "Notion 存档周报",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        -464
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "p1vCKKEP2Pb3iNFD",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output;\nconst cleaned = raw.replace(/^```json\\s*/i, \"\").replace(/```\\s*$/, \"\").trim();\n\nlet report;\ntry {\n  report = JSON.parse(cleaned);\n} catch (e) {\n  console.error('JSON parse failed:', e.message, '| raw preview:', cleaned.slice(0, 300));\n  return [{ json: { error: 'Invalid JSON from AI', parse_error: e.message, raw: cleaned.slice(0, 500) } }];\n}\n\n// 用 n8n 计算值覆盖 AI 的元数据，防止幻觉\nconst now = $now;\nconst weekInMonth = Math.ceil(now.day / 7);\nreport.weekly_title = now.toFormat(\"yyyy年M月\") + \"第\" + weekInMonth + \"周 TikTok 日区内容洞察周报\";\nreport.data_period = now.startOf(\"week\").toFormat(\"yyyy-MM-dd\") + \" ~ \" + now.endOf(\"week\").toFormat(\"yyyy-MM-dd\");\nreport.analyzed_count = $('Aggregate').first().json.data.length;\n\nreturn [{ json: report }];"
+      },
+      "id": "f1a2b3c4-d5e6-7890-abcd-222222222222",
+      "name": "Code 清洗2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -464
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "check-valid-data",
+              "leftValue": "={{ $json.webVideoUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        -80
+      ],
+      "id": "d9e27aa6-3251-425f-93e3-eebfc081bf61",
+      "name": "跳过空数据"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "check-min-count",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -64,
+        -464
+      ],
+      "id": "bd883707-c82e-4bdd-a868-65aff0dbf01c",
+      "name": "数据量检查"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "check-source-manual",
+              "leftValue": "={{ (() => { try { return $('加Top标签').item.json.source_type } catch(e) { return $('Edit Fields').item.json.source_type } })() }}",
+              "rightValue": "Manual",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-source-node-001",
+      "name": "检查来源",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        160
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "error-form-node-001",
+      "name": "抓取失败提示",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 3.2,
+      "position": [
+        240,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "acd662c3-6b5b-4d22-81cb-5851044e5cf0",
+              "name": "target_count",
+              "value": 20,
+              "type": "number"
+            },
+            {
+              "id": "a814ff99-de6a-4fef-b1f5-cabcbc33134b",
+              "name": "scrape_per_tag",
+              "value": 15,
+              "type": "number"
+            },
+            {
+              "id": "min-plays-001",
+              "name": "min_plays",
+              "value": 10000,
+              "type": "number"
+            },
+            {
+              "id": "max-age-001",
+              "name": "max_age_days",
+              "value": 30,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -960,
+        -400
+      ],
+      "id": "99c84f67-0425-4a1e-a0e9-9bcd6982b586",
+      "name": "周报参数"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "183Ncl8zN8doows4Zvy3IhVzo5iZ45uxgz4whX8IrBQo",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "工作表1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/183Ncl8zN8doows4Zvy3IhVzo5iZ45uxgz4whX8IrBQo/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -992,
+        -128
+      ],
+      "id": "15384203-aa70-4b2a-805f-f43e3bc403bb",
+      "name": "读取已有URL",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hdGavWk1HagzoUFs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 过滤已在 Google Sheets 中存在的 URL，按热度取 Top N\nconst aggregateItem = $('合并结果_Aggregate').first();\nconst trendingItems = aggregateItem ? (aggregateItem.json.data || []) : [];\nconst existingRows = $('读取已有URL').all();\nconst targetCount = $('周报参数').first().json.target_count;\n\n// 构建已有 URL 集合（统一 lowercase+trim，避免大小写不一致导致去重失效）\nconst existingUrls = new Set(\n  existingRows.map(r => (r.json.URL || '').toLowerCase().trim()).filter(Boolean)\n);\n\n// 过滤出新视频（已按热度排序，保持顺序）\nconst newItems = trendingItems.filter(item => !existingUrls.has((item.url || '').toLowerCase().trim()));\n\nconsole.log(`去重结果: 总计${trendingItems.length}条，已有${existingUrls.size}条，新视频${newItems.length}条，取Top${targetCount}条`);\n\nif (newItems.length === 0) {\n  return [];\n}\n\n// 已按热度分数排序，直接取 Top N\nreturn newItems.slice(0, targetCount).map(json => ({ json }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        -128
+      ],
+      "id": "f5e1d429-2be6-44b7-b15c-20ab75dbffa2",
+      "name": "去重过滤"
+    },
+    {
+      "id": "http-request-hashtags-001",
+      "name": "HTTP Request Hashtags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -784,
+        -400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync-get-dataset-items?token=YOUR_APIFY_TOKEN",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"hashtags\":[\"#面白い\",\"#かわいい\",\"#日常\",\"#料理\",\"#ペット\",\"#ダンス\",\"#カップル\",\"#美容\",\"#コスメ\",\"#ファッション\"],\"searchQueries\":[\"面白い\",\"かわいい\",\"日常\"],\"resultsPerPage\":15,\"proxyCountryCode\":\"JP\",\"searchSection\":\"/video\",\"commentsPerPost\":0,\"excludePinnedPosts\":false,\"maxFollowersPerProfile\":0,\"maxFollowingPerProfile\":0,\"maxRepliesPerComment\":0,\"scrapeRelatedVideos\":false,\"shouldDownloadAvatars\":false,\"shouldDownloadCovers\":false,\"shouldDownloadMusicCovers\":false,\"shouldDownloadSlideshowImages\":false,\"shouldDownloadVideos\":false}",
+        "options": {
+          "timeout": 300000
+        }
+      }
+    },
+    {
+      "id": "merge-results-code-001",
+      "name": "合并结果",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        -400
+      ],
+      "parameters": {
+        "jsCode": "// 单次 API 调用已同时包含 hashtag + search 结果\nconst allItems = $input.all();\nconst params = $('周报参数').first().json;\n\n// 1. 按 video id 去重\nconst seen = new Set();\nconst unique = [];\nfor (const item of allItems) {\n  const vid = String(item.json.id || item.json.videoId || '');\n  if (vid && !seen.has(vid)) {\n    seen.add(vid);\n    unique.push(item);\n  } else if (!vid) {\n    // 无 ID 时用 URL 作备用去重 key，防止无 ID 视频全部保留导致重复\n    const urlKey = item.json.webVideoUrl || item.json.videoUrl || '';\n    if (urlKey && !seen.has(urlKey)) {\n      seen.add(urlKey);\n      unique.push(item);\n    } else if (!urlKey) {\n      unique.push(item); // 真正无任何标识符的，保留（极少见）\n    }\n  }\n}\n\n// 2. 发布日期过滤（默认30天）\nconst now = Date.now() / 1000;\nconst maxAge = (params.max_age_days || 30) * 86400;\nconst recent = unique.filter(item => {\n  const ct = item.json.createTime;\n  if (!ct) return true; // 无日期的保留\n  return (now - ct) <= maxAge;\n});\n\n// 3. 播放量过滤\nconst minPlays = params.min_plays || 10000;\nconst popular = recent.filter(item => (item.json.playCount || 0) >= minPlays);\n\n// 4. 综合热度评分并排序（播放40% + 点赞30% + 评论10% + 收藏15% + 分享5%）\nconst scored = popular.map(item => {\n  const d = item.json;\n  const score = (d.playCount || 0) * 0.4\n              + (d.diggCount || 0) * 0.3\n              + (d.commentCount || 0) * 0.1\n              + (d.collectCount || 0) * 0.15\n              + (d.shareCount || 0) * 0.05;\n  return { ...item, _score: score };\n});\nscored.sort((a, b) => b._score - a._score);\n\nconsole.log(`合并结果: 原始${allItems.length}条 → 去重${unique.length} → 30天内${recent.length} → 播放≥${minPlays}的${popular.length} → 排序完成`);\n\n// 5. 附加 url 和排名信息\nreturn scored.map((item, i) => ({\n  json: {\n    ...item.json,\n    url: item.json.webVideoUrl || item.json.videoUrl || '',\n    _rank: i + 1,\n    _score: item._score\n  }\n}));"
+      }
+    },
+    {
+      "id": "aggregate-merge-001",
+      "name": "合并结果_Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -400
+      ],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "data"
+      }
+    },
+    {
+      "id": "data-extract-code-001",
+      "name": "数据提取",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "jsCode": "const d = $json;\n\n// 计算互动指标\nconst likeRatio = d.playCount > 0 ? (d.diggCount / d.playCount * 100).toFixed(2) : '0';\nconst engagementRate = d.playCount > 0\n  ? ((d.diggCount + d.commentCount + d.shareCount) / d.playCount * 100).toFixed(2) : '0';\nconst collectRate = d.playCount > 0 ? ((d.collectCount || 0) / d.playCount * 100).toFixed(2) : '0';\n\n// 关键词分类（基于文案+hashtag）\nconst text = (d.text || '').toLowerCase();\nconst tags = (d.hashtags || []).map(h => String(h.name || h.title || (typeof h === 'string' ? h : '')).toLowerCase()).join(' ');\nconst combined = text + ' ' + tags;\n\nlet category = 'Other';\nconst categoryMap = [\n  ['Food',       ['料理', 'レシピ', 'cooking', '食べ', 'グルメ', 'ごはん', 'スイーツ', 'お菓子', '飲み']],\n  ['Pets',       ['ペット', '猫', '犬', 'cat', 'dog', '動物', 'うさぎ', 'ハムスター']],\n  ['Dance',      ['ダンス', 'dance', '踊', '振付', 'choreography']],\n  ['Beauty',     ['美容', 'メイク', 'makeup', 'スキンケア', 'コスメ', 'cosmetic', 'beauty', 'ネイル']],\n  ['Fashion',    ['ファッション', 'fashion', 'コーデ', 'ootd', '服', 'outfit', 'wear']],\n  ['Couple',     ['カップル', 'couple', '彼氏', '彼女', '恋人', '夫婦', '恋']],\n  ['Music',      ['music', '歌', '弾いてみた', '歌ってみた', 'カバー', '演奏', 'cover']],\n  ['Comedy',     ['面白', 'おもしろ', '笑', 'ネタ', 'あるある', 'comedy', 'funny', 'バズ', 'ツッコミ']],\n  ['Daily Life', ['日常', 'vlog', '日記', 'daily', 'ルーティン', 'routine', 'life']],\n  ['Story',      ['ストーリー', 'story', '体験談', '実話', 'エピソード']],\n  ['Tips',       ['tips', 'ライフハック', 'hack', '裏技', '便利', '知識', '方法', 'howto']],\n];\nfor (const [cat, keywords] of categoryMap) {\n  if (keywords.some(kw => combined.includes(kw))) { category = cat; break; }\n}\n\n// 流量信号判断（改进版）\n// 优先级：付費推広（明确披露） > コラボ > 官方助推（弱信号兜底）\nlet signal = '自然流量';\nconst lr = parseFloat(likeRatio);\nconst authorFans = d.authorMeta?.fans || d.authorStats?.followerCount || 0;\n\n// 1. 付費推広：hashtag 精确匹配（去掉 \b，日文语境下 word boundary 不可靠）\nconst hashtagNames = (d.hashtags || []).map(h => String(h.name || h.title || (typeof h === 'string' ? h : '')).toLowerCase());\nconst hasPRTag = hashtagNames.some(t => t === 'pr' || t === 'ad' || t === 'sponsored');\nconst hasAdKeyword = combined.includes('提供') || combined.includes('案件') ||\n                     combined.includes('タイアップ') || combined.includes('スポンサー') ||\n                     combined.includes('sponsored');\n\n// 2. コラボ\nconst isCollab = combined.includes('コラボ') || combined.includes('collab') ||\n                 combined.includes('コラボレーション');\n\n// 3. 官方助推：低点赞率+高播放，或粉丝少但播放量异常（views/fans 比 > 20×）\nconst suspectBoost = (lr < 1 && d.playCount > 500000) ||\n                     (authorFans > 0 && authorFans < 50000 && d.playCount > authorFans * 20 && lr < 2);\n\nif (hasPRTag || hasAdKeyword) signal = '疑似付費推広';\nelse if (isCollab) signal = '疑似コラボ';\nelse if (suspectBoost) signal = '疑似官方助推';\n\n// 提取精简 hashtag 列表（最多15个）\nconst hashtags = (d.hashtags || []).map(h => h.name || h.title || (typeof h === 'string' ? h : '')).filter(Boolean).slice(0, 15);\n\nreturn {\n  json: {\n    url:                d.webVideoUrl || d.videoUrl || '',\n    title:              d.text || '',\n    hashtags:           hashtags.join(', '),\n    author:             d.authorMeta?.name || d.author?.uniqueId || '',\n    author_fans:        d.authorMeta?.fans || d.authorStats?.followerCount || 0,\n    play_count:         d.playCount || 0,\n    digg_count:         d.diggCount || 0,\n    comment_count:      d.commentCount || 0,\n    share_count:        d.shareCount || 0,\n    collect_count:      d.collectCount || 0,\n    like_ratio:         likeRatio + '%',\n    engagement_rate:    engagementRate + '%',\n    collect_rate:       collectRate + '%',\n    content_category:   category,\n    distribution_signal: signal,\n    create_time:        d.createTimeISO || (d.createTime ? new Date(d.createTime * 1000).toISOString().split('T')[0] : ''),\n    source_type:        $json.source_type || 'Weekly_Top20',\n    batch_id:           $json.batch_id || '',\n    _rank:              $json._rank || 0,\n    _score:             $json._score || 0,\n  }\n};"
+      }
+    },
+    {
+      "id": "build-prompt-code-001",
+      "name": "构建周报提示词",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        -160
+      ],
+      "parameters": {
+        "jsCode": "const data = $json.data;\nconst dataCount = data.length;\n\n// Compute current date (n8n Code node has access to native JS Date)\nconst now = new Date();\nconst year = now.getFullYear();\nconst month = now.getMonth() + 1;\nconst day = now.getDate();\nconst weekNum = Math.ceil(day / 7);\nconst dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');\nconst weekStr = year + '年' + month + '月第' + weekNum + '周';\n\nconst dataJson = JSON.stringify(data, null, 2);\n\nconst prompt = '# Role\\n'\n  + '你是一名深耕日本市场 10 年的 TikTok 资深运营专家，同时具备平台算法、流量分发与商业化的系统性视野。\\n\\n'\n  + '# Context\\n'\n  + '当前日期：' + dateStr + '，本周为 ' + weekStr + '\\n\\n'\n  + '以下是本周 TikTok 日区 Top' + dataCount + ' 视频的结构化元数据（JSON 数组）。\\n'\n  + '每条包含：URL、Title（原文文案）、Hashtags（逗号分隔）、Author、Author_Fans（粉丝数）、Play_Count、Digg_Count、Comment_Count、Share_Count、Collect_Count、Like_Ratio（点赞/播放 %）、Engagement_Rate（总互动/播放 %）、Content_Category（基于文案关键词分类）、distribution_signal（自然流量/疑似官方助推/疑似付費推広/疑似コラボ）、Create_Time。\\n\\n'\n  + '⚠️ 重要约束：\\n'\n  + '- 你只能看到视频的文案文字、hashtag 和互动数字，无法看到视频画面或用户评论\\n'\n  + '- 所有分析必须严格基于提供数据中的 Title/Hashtags 文本和互动指标数字\\n'\n  + '- 禁止编造未在数据中出现的信息，禁止推断视频的视觉内容或音乐\\n'\n  + '- 如某板块数据不足以支撑结论，明确标注\"（数据不足）\"而非编造内容\\n\\n'\n  + '输入数据：\\n'\n  + dataJson + '\\n\\n'\n  + '# Task\\n'\n  + '基于以上 ' + dataCount + ' 条视频的结构化数据，输出一份结构化日本 TikTok 周报。\\n'\n  + '严格按照下方 JSON 格式输出，禁止包含任何开场白或解释文字。\\n\\n'\n  + '# Analysis Rules\\n\\n'\n  + '1. [大盘健康度 macro_health]\\n'\n  + '   - 统计 Play_Count 分布：<100万 / 100-500万 / >500万 各占比（如 \"3/10/3\"）\\n'\n  + '   - 计算所有视频 Like_Ratio 均值（去掉 % 后做算术平均），判断整体互动活跃度\\n'\n  + '   - 统计 distribution_signal 各类别占比\\n'\n  + '   - 综合判断本周日区流量状态（扩张/平稳/收缩）和生态健康度\\n\\n'\n  + '2. [内容格局 content_landscape]\\n'\n  + '   - 统计 Content_Category 各类别占比（Comedy/Daily Life/Food/Beauty/Fashion/Pets/Dance/Music/Couple/Story/Tips/Other）\\n'\n  + '   - 阅读 Title 和 Hashtags，提炼本周最主导的内容主题和话题风向（举具体文案例子）\\n'\n  + '   - 找出最强势的 1-2 个内容类别及其核心特征\\n\\n'\n  + '3. [爆款驱动逻辑 viral_logic]\\n'\n  + '   - 找出 Like_Ratio 最高的前 3 条视频，分析其文案共同特征（用数据支撑，如 \"Like_Ratio=8.5%\"）\\n'\n  + '   - 找出 Engagement_Rate 最高的前 3 条，总结共同规律\\n'\n  + '   - 从文案用词和 Hashtags 归纳触发高互动的话题类型\\n\\n'\n  + '4. [文化热词图谱 cultural_map]\\n'\n  + '   - 聚合所有 Hashtags，识别本周高频标签（出现≥2次优先）\\n'\n  + '   - 从 Title 字段提炼本周日区高频日语表达、梗、情感词汇\\n'\n  + '   - 标注新兴话题趋势（如有）\\n\\n'\n  + '5. [可落地创作建议 actionable_ideas]\\n'\n  + '   - 基于以上分析，输出 3 条本周可直接落地的内容创作建议\\n'\n  + '   - 每条格式：【方向名】核心逻辑（引用具体数据/文案证据）+ 一句话日文文案示例\\n\\n'\n  + '6. [广告生态识别 ad_ecosystem]\\n'\n  + '   - 汇总 distribution_signal 非\"自然流量\"的视频，分析其文案/hashtag 特征\\n'\n  + '   - 给出对有机创作者的启示：哪些赛道已有品牌入场，哪些仍是蓝海\\n\\n'\n  + '# Output（严格 JSON，禁止输出其他任何内容）\\n'\n  + '{\\n'\n  + '  \"weekly_title\": \"占位（将被后处理覆盖）\",\\n'\n  + '  \"data_period\": \"占位（将被后处理覆盖）\",\\n'\n  + '  \"analyzed_count\": 0,\\n'\n  + '  \"macro_health\": \"大盘健康度：播放量分布数字（具体条数）、平均点赞率、各流量信号占比、整体生态判断（3-4句，含具体数字）\",\\n'\n  + '  \"content_landscape\": \"内容格局：各Content_Category占比、主导话题趋势（含Title引用）（3-4句）\",\\n'\n  + '  \"viral_logic\": \"爆款驱动逻辑：点赞率最高视频文案特征（含具体Like_Ratio数字）、触发互动的话题类型（3-4句）\",\\n'\n  + '  \"cultural_map\": \"文化热词图谱：高频Hashtags统计、本周热词和文化符号（3-4句）\",\\n'\n  + '  \"hot_hashtags\": [\"高频tag1\", \"高频tag2\", \"高频tag3\", \"高频tag4\", \"高频tag5\"],\\n'\n  + '  \"actionable_ideas\": \"3条可落地内容方向：【方向1】逻辑+证据+日文示例 【方向2】逻辑+证据+日文示例 【方向3】逻辑+证据+日文示例\",\\n'\n  + '  \"ad_ecosystem\": \"广告生态：付费/合作内容特征总结、已被占领赛道 vs 蓝海机会（2-3句）\",\\n'\n  + '  \"weekly_full_report\": \"以上所有板块的完整叙述版。约800字，中文写作，关键日文词汇保留原文并括注中文。适合直接阅读，逻辑清晰，有观点有数据，体现高阶运营视野。\"\\n'\n  + '}';\n\nconsole.log('构建周报提示词: data_count=' + dataCount + ', prompt_length=' + prompt.length);\nreturn [{ json: { prompt: prompt, data_count: dataCount } }];"
+      }
+    }
+  ],
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "跳过空数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Route by Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Source": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "周报参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "加Top标签",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "加Top标签": {
+      "main": [
+        [
+          {
+            "node": "数据提取",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "数据量检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "周报 AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code 清洗2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek 周报": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "周报 AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code 清洗2": {
+      "main": [
+        [
+          {
+            "node": "Notion 存档周报",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "跳过空数据": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "检查来源",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据量检查": {
+      "main": [
+        [
+          {
+            "node": "构建周报提示词",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "检查来源": {
+      "main": [
+        [
+          {
+            "node": "抓取失败提示",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "周报参数": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request Hashtags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取已有URL": {
+      "main": [
+        [
+          {
+            "node": "去重过滤",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "去重过滤": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Hashtags": {
+      "main": [
+        [
+          {
+            "node": "合并结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并结果": {
+      "main": [
+        [
+          {
+            "node": "合并结果_Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并结果_Aggregate": {
+      "main": [
+        [
+          {
+            "node": "读取已有URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据提取": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "构建周报提示词": {
+      "main": [
+        [
+          {
+            "node": "周报 AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null
+}

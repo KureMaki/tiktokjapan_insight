@@ -1,0 +1,40 @@
+# ===== 密钥 =====
+.env
+.env.local
+.env.*.local
+
+# ===== n8n 运行时数据 =====
+n8n_data/
+
+# ===== 执行日志与快照 =====
+exec_*.json
+exec170.json
+latest_exec_ids.json
+ai_report_170.json
+live_workflow.json
+My workflow.json
+
+# ===== 一次性调试脚本 =====
+fix_*.js
+check_*.js
+analyze_exec*.js
+analyze_exec2.js
+fetch_and_*.js
+remove_*.js
+print_filter*.js
+update_code_node.js
+deploy_scraper_dedup.js
+backup_workflow.js
+
+# ===== 文本调试文件 =====
+exec170_report.txt
+DataSet_thinking.txt
+filter_code.txt
+
+# ===== IDE / 工具元数据 =====
+.claude/
+.sisyphus/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
