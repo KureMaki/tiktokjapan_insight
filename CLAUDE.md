@@ -1,7 +1,9 @@
 # TT-Insight Project
 
 ## 项目概述
-TikTok 日区内容分析系统，使用 n8n + Docker + Apify + Deepseek API。
+TikTok 日区内容分析系统，使用 n8n + Docker + Apify + DeepSeek API。
+**当前状态**：阶段一、阶段二均已跑通，项目作为作品集收尾。
+**GitHub**：https://github.com/KureMaki/tiktokjapan_insight
 
 ## 技术栈
 - **n8n**：本地运行在 `http://localhost:5678`（Docker）
@@ -9,16 +11,26 @@ TikTok 日区内容分析系统，使用 n8n + Docker + Apify + Deepseek API。
 - **DeepSeek API**：AI 分析（模型：deepseek-reasoner）
 - **Google Sheets**：数据存储（TTJ_Content_Analysis 表）
 
+## 环境配置
+密钥统一存放于 `.env`（不入库），参考 `.env.example`：
+```
+N8N_API_KEY=...        # n8n 设置 → API Keys 生成
+N8N_WORKFLOW_ID=...    # n8n 工作流 ID（Settings → 复制）
+APIFY_TOKEN=...        # console.apify.com → Integrations
+```
+`build_workflow.js` 和 `deploy.js` 启动时自动读取 `.env`，无需额外依赖。
+
 ## n8n API 操作规范
 - **修改工作流时，直接用 n8n API，不要让用户手动下载/上传 JSON**
-- API Key：见 `.env` 文件中的 `N8N_API_KEY`（n8n 设置 → API Keys 生成）
+- API Key：见 `.env` 中的 `N8N_API_KEY`
 - PUT 更新工作流只传：`{ "name", "nodes", "connections", "settings": { "executionOrder" }, "staticData": null }`
 - 用 Node.js 发送请求（环境有 Node.js，无 Python）
 
 ## 当前工作流
-- **ID**：`wSf6EkUCYmwUWR10` | **名称**：My workflow | **节点数**：29
+- **ID**：见 `.env` 中的 `N8N_WORKFLOW_ID` | **名称**：My workflow | **节点数**：29
 - 构建脚本：`build_workflow.js`（基于 `backups/workflow_before_hashtag_strategy.json` 构建）
 - 部署脚本：`deploy.js`（读取 `backups/workflow_hashtag_strategy_new.json` → PUT 到 n8n）
+- ⚠️ `backups/` 内的 JSON 文件中 Apify token 已替换为占位符 `YOUR_APIFY_TOKEN`（GitHub 安全要求）；本地运行依赖 `.env` 中的真实 token，由脚本在运行时注入
 
 ## 工作流结构
 
@@ -62,20 +74,12 @@ TikTok 日区内容分析系统，使用 n8n + Docker + Apify + Deepseek API。
 - **AC（1列）**：Time_stamp
 - **matchingColumns**：`["URL"]`（以 URL 为唯一键 appendOrUpdate）
 
-## 待完成
+## 后续方向
 
-### 功能性
-- 🟢 阶段二：放量到生产参数（scrape_per_tag=15, target_count=20）
-- 阶段二：加定时触发器（Cron）替代手动执行
-- 阶段二：完成/失败通知机制
-- 阶段三：Agent 自主意图识别
-
-### 优化 Backlog
-- **🟢 热度权重加入 collectCount**：已实现 (play*0.4 + digg*0.3 + comment*0.1 + collect*0.15 + share*0.05)
-- **🟢 Aggregate 解决 Sheets 多次读取**：已在“合并结果”后添加“合并结果_Aggregate”，Sheets 读取降至 1 次
-- **🟢 build_workflow.js 节点注册表**：已提取 `NODES` 常量对象，防止拼写错误 silent fail
-- **🟢 Prompt 字段名统一为 PascalCase**
-- **🟢 Hashtag 截取上限从 8 提高到 15**：已在数据提取中实装，并修复了对象类型 `.toLowerCase()` 报错
+阶段三不在本项目迭代范围内，计划作为独立项目重建：
+- 技术栈：Claude API + Tool Use + GitHub Actions（不依赖 n8n）
+- 核心能力：用户提问 → Agent 自主决定抓取策略 → AI 语义理解 → 定制回答
+- 详见 README.md「架构演进方向」一节
 
 ## Docker
 ```bash
